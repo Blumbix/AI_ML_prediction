@@ -1,10 +1,7 @@
+from matplotlib import pyplot as py
 import pandas
-import numpy as np
-from sklearn.pipeline import Pipeline
 from sklearn.preprocessing import LabelEncoder
-from sklearn.linear_model import Lasso
-from sklearn.model_selection import GridSearchCV
-from sklearn.metrics import  r2_score
+from sklearn.model_selection import train_test_split
 
 #reading our CSV file into a pandas DataFrame
 d = open('videogames.csv')
@@ -17,9 +14,6 @@ labelEncoderPlatform = LabelEncoder()
 labelEncoderPlatform.fit(platformList)
 labelsPlatform = labelEncoderPlatform.transform(platformList)
 gamesFrame['Platform']=pandas.Series(labelsPlatform)
-
-print(platformList[150:155])
-print(labelsPlatform[150:155])
 
 genreList = gamesFrame['Genre'].tolist()
 labelEncoderGenre = LabelEncoder()
@@ -34,43 +28,31 @@ labelsPublisher = labelEncoderPublisher.transform(publisherList)
 gamesFrame['Publisher']=pandas.Series(labelsPublisher)
 
 gamesFrame = gamesFrame.dropna()
+gamesFrame = gamesFrame[100:5000]
 
-# Keep track of the features
-headers = list(gamesFrame)
+py.hist(gamesFrame['Global_Sales'],bins=100,rwidth=0.6)
+py.show()
 
-"""
-# Store the revenues of games separately in a list
-YIndex = headers.index('Global_Sales')
-datasetMatrix = gamesFrame.as_matrix()
-print(gamesFrame)
-print(datasetMatrix)
+X=gamesFrame[['Platform','Year','Genre','Publisher']]
+Y=gamesFrame[['Global_Sales']]
 
-# Make the train and test splits
-datasetTrain = datasetMatrix[0:1500]
-datasetTrainWithoutLabels = np.delete(datasetTrain, YIndex, 1)
+X_train, X_test, Y_train, Y_test = train_test_split(X, Y,  random_state=142)
 
-labels = datasetTrain[:, YIndex]
+from sklearn.svm import SVR
+svr_poly = SVR(gamma='auto')
+svr_poly.fit(X_train, Y_train.values.reshape(-1,))
+pred=svr_poly.predict(X_test)
+#print("Wartosc przewidziana:")
+#print(pred[:10])
 
-datasetTest = datasetMatrix[1500:datasetMatrix.shape[0]]
-datasetTestWithoutLabels = np.delete(datasetTest, YIndex, 1)
+test = Y_test.to_numpy().ravel()
+sum = 0
 
-trueLabels = datasetTest[:, YIndex]
-print(trueLabels)
-regressor = Lasso()
-alphas = np.arange(1,50)
-
-steps = [('regressor',regressor)]
-pipeline = Pipeline(steps)
-
-parameterGrid = dict(regressor__alpha = alphas)
-GridSearchResult = GridSearchCV(pipeline,param_grid=parameterGrid)
-
-GridSearchResult.fit(datasetTrainWithoutLabels,labels)
-
-#print(GridSearchResult.best_params_)
-
-predictions = GridSearchResult.predict(datasetTestWithoutLabels)
-print(r2_score(trueLabels,predictions))
-
-
-"""
+#Dodac blad procentowy
+import math
+for i in range(0, len(test)):
+    res = math.fabs((test[i]-pred[i])/test[i])*100
+    sum += res
+    print("Wartosc prawidlowa:",test[i],"\tPrzewidziana: {:.2f}".format(pred[i]),"\tBlad: {:.2f}%".format(res))
+acc = sum/len(test)
+print("Blad: {:.4f}%".format(acc));
