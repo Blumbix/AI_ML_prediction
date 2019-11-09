@@ -3,6 +3,9 @@ import pandas
 from matplotlib import pyplot as py
 from sklearn.preprocessing import LabelEncoder
 from sklearn.model_selection import train_test_split
+from timeit import default_timer as timer
+
+start1 = timer()
 
 #wczytanie danych z pliku .csv do pandas DataFrame
 d = open('videogames.csv')
@@ -53,10 +56,14 @@ Y=gamesFrame[['Global_Sales']]
 X_train, X_test, Y_train, Y_test = train_test_split(X, Y,  random_state=40)
 
 from sklearn import neural_network
-mlp_reg = neural_network.MLPRegressor(hidden_layer_sizes=(100, 100, 100,), activation='relu', solver='adam',
-                                      learning_rate='adaptive', alpha=0.0001, max_iter=200, learning_rate_init=0.001)
+mlp_reg = neural_network.MLPRegressor(hidden_layer_sizes=(300, 300, 300,), activation='relu', solver='adam',
+                                      learning_rate='adaptive', alpha=0.0002, max_iter=200, learning_rate_init=0.001)
 mlp_reg.fit(X_train, Y_train.values.reshape(-1,))
-pred=mlp_reg.predict(X_test)
+start2 = timer()
+
+pred = mlp_reg.predict(X_test)
+end2 = timer()
+
 #print("Wartosc przewidziana:")
 #print(pred[:10])
 
@@ -67,6 +74,9 @@ sum = 0
 for i in range(0, len(test)):
     res = math.fabs((test[i]-pred[i])/test[i])*100
     sum += res
-    print("Wartosc prawidlowa:",test[i],"\tPrzewidziana: {:.2f}".format(pred[i]),"\t  Blad: {:.2f}%".format(res))
+    #print("Wartosc prawidlowa:",test[i],"\tPrzewidziana: {:.2f}".format(pred[i]),"\t  Blad: {:.2f}%".format(res))
 acc = sum/len(test)
-print("Blad: {:.4f}%".format(acc));
+end1 = timer()
+print("Blad: {:.4f}%".format(acc))
+print("Czas predykcji: {:.4f} sekund".format(end2 - start2))
+print("Czas wykonania programu: {:.4f} sekund".format(end1 - start1))
